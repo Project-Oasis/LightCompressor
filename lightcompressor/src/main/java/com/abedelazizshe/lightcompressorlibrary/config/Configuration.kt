@@ -23,6 +23,7 @@ data class SharedStorageConfiguration(
 )
 
 enum class SaveLocation {
+    cache,
     pictures,
     downloads,
     movies,

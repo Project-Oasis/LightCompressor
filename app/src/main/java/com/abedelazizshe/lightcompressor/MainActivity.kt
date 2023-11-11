@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setReadStoragePermission()
+//        setReadStoragePermission()
 
         binding.pickVideo.setOnClickListener {
             pickVideo()
@@ -180,7 +180,7 @@ class MainActivity : AppCompatActivity() {
                 uris,
                 isStreamable = false,
                 sharedStorageConfiguration = SharedStorageConfiguration(
-                    saveAt = SaveLocation.movies,
+                    saveAt = SaveLocation.cache,
                     subFolderName = "my-demo-videos"
                 ),
 //                appSpecificStorageConfiguration = AppSpecificStorageConfiguration(

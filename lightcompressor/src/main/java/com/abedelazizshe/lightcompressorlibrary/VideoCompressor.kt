@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
+import androidx.core.net.toUri
 import com.abedelazizshe.lightcompressorlibrary.compressor.Compressor.compressVideo
 import com.abedelazizshe.lightcompressorlibrary.compressor.Compressor.isRunning
 import com.abedelazizshe.lightcompressorlibrary.config.*
@@ -231,12 +232,16 @@ object VideoCompressor : CoroutineScope by MainScope() {
 
                 if (Build.VERSION.SDK_INT >= 29) {
                     val fullPath =
-                        if (sharedStorageConfiguration.subFolderName != null) "$saveLocation/${sharedStorageConfiguration.subFolderName}"
+                        if (sharedStorageConfiguration.saveAt == SaveLocation.cache) SaveLocation.cache.name
+                        else if (sharedStorageConfiguration.subFolderName != null) "$saveLocation/${sharedStorageConfiguration.subFolderName}"
                         else saveLocation
                     if (shouldSave == true) {
                         saveVideoInExternal(context, videoFileName, fullPath, videoFile)
                         File(context.filesDir, videoFileName).delete()
-                        return File("/storage/emulated/0/${fullPath}", videoFileName)
+                        return File(
+                            if (sharedStorageConfiguration.saveAt == SaveLocation.cache) context.cacheDir.path else "/storage/emulated/0/${fullPath}",
+                            videoFileName
+                        )
                     }
                     return File(context.filesDir, videoFileName)
                 } else {
@@ -244,7 +249,8 @@ object VideoCompressor : CoroutineScope by MainScope() {
                         Environment.getExternalStoragePublicDirectory(saveLocation)
 
                     val fullPath =
-                        if (sharedStorageConfiguration.subFolderName != null) "$savePath/${sharedStorageConfiguration.subFolderName}"
+                        if (sharedStorageConfiguration.saveAt == SaveLocation.cache) context.cacheDir.path
+                        else if (sharedStorageConfiguration.subFolderName != null) "$savePath/${sharedStorageConfiguration.subFolderName}"
                         else savePath.path
 
                     val desFile = File(fullPath, videoFileName)
@@ -303,25 +309,39 @@ object VideoCompressor : CoroutineScope by MainScope() {
         saveLocation: String,
         videoFile: File
     ) {
-        val values = ContentValues().apply {
+        val fileUri: Uri?
+        var postProcessingTasks: () -> Unit = {}
 
-            put(
-                MediaStore.Images.Media.DISPLAY_NAME,
-                videoFileName
-            )
-            put(MediaStore.Images.Media.MIME_TYPE, "video/mp4")
-            put(MediaStore.Images.Media.RELATIVE_PATH, saveLocation)
-            put(MediaStore.Images.Media.IS_PENDING, 1)
+        if (saveLocation == SaveLocation.cache.name) {
+            val cacheFile = File(context.cacheDir, "/$videoFileName")
+            fileUri = cacheFile.toUri()
+        } else {
+            val values = ContentValues().apply {
+
+                put(
+                    MediaStore.Images.Media.DISPLAY_NAME,
+                    videoFileName
+                )
+                put(MediaStore.Images.Media.MIME_TYPE, "video/mp4")
+                put(MediaStore.Images.Media.RELATIVE_PATH, saveLocation)
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+
+            var collection =
+                MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+
+            if (saveLocation == Environment.DIRECTORY_DOWNLOADS) {
+                collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            }
+
+            fileUri = context.contentResolver.insert(collection, values)
+
+            postProcessingTasks = {
+                values.clear()
+                values.put(MediaStore.Video.Media.IS_PENDING, 0)
+                context.contentResolver.update(fileUri!!, values, null, null)
+            }
         }
-
-        var collection =
-            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-
-        if (saveLocation == Environment.DIRECTORY_DOWNLOADS) {
-            collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-        }
-
-        val fileUri = context.contentResolver.insert(collection, values)
 
         fileUri?.let {
             context.contentResolver.openFileDescriptor(fileUri, "rw")
@@ -340,9 +360,7 @@ object VideoCompressor : CoroutineScope by MainScope() {
                     }
                 }
 
-            values.clear()
-            values.put(MediaStore.Video.Media.IS_PENDING, 0)
-            context.contentResolver.update(fileUri, values, null, null)
+            postProcessingTasks()
         }
     }
 
