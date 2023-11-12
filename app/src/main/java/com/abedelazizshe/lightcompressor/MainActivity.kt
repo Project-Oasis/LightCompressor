@@ -19,10 +19,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.abedelazizshe.lightcompressor.databinding.ActivityMainBinding
-import com.abedelazizshe.lightcompressorlibrary.CompressionListener
 import com.abedelazizshe.lightcompressorlibrary.VideoCompressor
+import com.abedelazizshe.lightcompressorlibrary.VideoCompressorWithCoroutine
 import com.abedelazizshe.lightcompressorlibrary.VideoQuality
-import com.abedelazizshe.lightcompressorlibrary.compressVideosInCoroutine
 import com.abedelazizshe.lightcompressorlibrary.config.Configuration
 import com.abedelazizshe.lightcompressorlibrary.config.SaveLocation
 import com.abedelazizshe.lightcompressorlibrary.config.SharedStorageConfiguration
@@ -177,9 +176,9 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
 
-            Log.i("VideoCompressor", "Starting compression")
+            Log.i("VideoCompressorWithCoroutine", "Starting compression")
 
-            val result = compressVideosInCoroutine(
+            val result = VideoCompressorWithCoroutine.compressVideos(
                 context = applicationContext,
                 uris = uris,
                 isStreamable = false,

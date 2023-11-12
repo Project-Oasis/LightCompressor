@@ -9,9 +9,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-object CompressorWithCoroutine {
+object VideoCompressorWithCoroutine {
 
-    suspend fun compressVideosInCoroutine(
+    suspend fun compressVideos(
         context: Context,
         uris: List<Uri>,
         isStreamable: Boolean = false,
