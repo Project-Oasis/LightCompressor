@@ -9,7 +9,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-suspend fun compressVideosInCoroutine(
+public suspend fun compressVideosInCoroutine(
     context: Context,
     uris: List<Uri>,
     isStreamable: Boolean = false,
