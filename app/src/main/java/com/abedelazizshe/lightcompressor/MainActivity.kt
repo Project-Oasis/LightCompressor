@@ -22,6 +22,7 @@ import com.abedelazizshe.lightcompressor.databinding.ActivityMainBinding
 import com.abedelazizshe.lightcompressorlibrary.CompressionListener
 import com.abedelazizshe.lightcompressorlibrary.VideoCompressor
 import com.abedelazizshe.lightcompressorlibrary.VideoQuality
+import com.abedelazizshe.lightcompressorlibrary.compressVideosInCoroutine
 import com.abedelazizshe.lightcompressorlibrary.config.Configuration
 import com.abedelazizshe.lightcompressorlibrary.config.SaveLocation
 import com.abedelazizshe.lightcompressorlibrary.config.SharedStorageConfiguration
@@ -175,70 +176,90 @@ class MainActivity : AppCompatActivity() {
         binding.mainContents.visibility = View.VISIBLE
 
         lifecycleScope.launch {
-            VideoCompressor.start(
+
+            Log.i("VideoCompressor", "Starting compression")
+
+            val result = compressVideosInCoroutine(
                 context = applicationContext,
-                uris,
+                uris = uris,
                 isStreamable = false,
                 sharedStorageConfiguration = SharedStorageConfiguration(
                     saveAt = SaveLocation.cache,
                     subFolderName = "my-demo-videos"
                 ),
-//                appSpecificStorageConfiguration = AppSpecificStorageConfiguration(
-//
-//                ),
                 configureWith = Configuration(
                     quality = VideoQuality.LOW,
                     videoNames = uris.map { uri -> uri.pathSegments.last() },
                     isMinBitrateCheckEnabled = true,
-                ),
-                listener = object : CompressionListener {
-                    override fun onProgress(index: Int, percent: Float) {
-                        //Update UI
-                        if (percent <= 100)
-                            runOnUiThread {
-                                data[index] = VideoDetailsModel(
-                                    "",
-                                    uris[index],
-                                    "",
-                                    percent
-                                )
-                                adapter.notifyDataSetChanged()
-                            }
-                    }
-
-                    override fun onStart(index: Int) {
-                        data.add(
-                            index,
-                            VideoDetailsModel("", uris[index], "")
-                        )
-                        runOnUiThread {
-                            adapter.notifyDataSetChanged()
-                        }
-
-                    }
-
-                    override fun onSuccess(index: Int, size: Long, path: String?) {
-                        data[index] = VideoDetailsModel(
-                            path,
-                            uris[index],
-                            getFileSize(size),
-                            100F
-                        )
-                        runOnUiThread {
-                            adapter.notifyDataSetChanged()
-                        }
-                    }
-
-                    override fun onFailure(index: Int, failureMessage: String) {
-                        Log.wtf("failureMessage", failureMessage)
-                    }
-
-                    override fun onCancelled(index: Int) {
-                        Log.wtf("TAG", "compression has been cancelled")
-                        // make UI changes, cleanup, etc
-                    }
-                },
+                )
             )
+
+            Log.i("VideoCompressor", "Compression result: $result")
+
+//            VideoCompressor.start(
+//                context = applicationContext,
+//                uris,
+//                isStreamable = false,
+//                sharedStorageConfiguration = SharedStorageConfiguration(
+//                    saveAt = SaveLocation.cache,
+//                    subFolderName = "my-demo-videos"
+//                ),
+////                appSpecificStorageConfiguration = AppSpecificStorageConfiguration(
+////
+////                ),
+//                configureWith = Configuration(
+//                    quality = VideoQuality.LOW,
+//                    videoNames = uris.map { uri -> uri.pathSegments.last() },
+//                    isMinBitrateCheckEnabled = true,
+//                ),
+//                listener = object : CompressionListener {
+//                    override fun onProgress(index: Int, percent: Float) {
+//                        //Update UI
+//                        if (percent <= 100)
+//                            runOnUiThread {
+//                                data[index] = VideoDetailsModel(
+//                                    "",
+//                                    uris[index],
+//                                    "",
+//                                    percent
+//                                )
+//                                adapter.notifyDataSetChanged()
+//                            }
+//                    }
+//
+//                    override fun onStart(index: Int) {
+//                        data.add(
+//                            index,
+//                            VideoDetailsModel("", uris[index], "")
+//                        )
+//                        runOnUiThread {
+//                            adapter.notifyDataSetChanged()
+//                        }
+//
+//                    }
+//
+//                    override fun onSuccess(index: Int, size: Long, path: String?) {
+//                        data[index] = VideoDetailsModel(
+//                            path,
+//                            uris[index],
+//                            getFileSize(size),
+//                            100F
+//                        )
+//                        runOnUiThread {
+//                            adapter.notifyDataSetChanged()
+//                        }
+//                    }
+//
+//                    override fun onFailure(index: Int, failureMessage: String) {
+//                        Log.wtf("failureMessage", failureMessage)
+//                    }
+//
+//                    override fun onCancelled(index: Int) {
+//                        Log.wtf("TAG", "compression has been cancelled")
+//                        // make UI changes, cleanup, etc
+//                    }
+//                },
+//            )
         }
     }
 }
